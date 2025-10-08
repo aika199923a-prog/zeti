@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="kk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zeti: Хронология ойыны</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.39/Tone.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      background: linear-gradient(to right, #663399, #A020F0);
+      color: white;
+      text-align: center;
+      padding: 2rem;
+    }
+    h1 {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+    }
+    #timeline {
+      display: flex;
+      justify-content: space-around;
+      margin: 2rem 0;
+    }
+    .timeline-slot {
+      width: 100px;
+      height: 100px;
+      border: 2px dashed white;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #blocks-container {
+      display: flex;
+      justify-content: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .draggable-block {
+      width: 100px;
+      height: 100px;
+      background-color: #fff;
+      color: #000;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      font-weight: bold;
+    }
+    .drag-over {
+      border-color: lime;
+      box-shadow: 0 0 10px lime;
+    }
+    .shake {
+      animation: shake 0.4s;
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-5px); }
+    }
+  </style>
+</head>
+<body>
+  <h1>Хронология сызығы</h1>
+  <div id="timeline">
+    <div class="timeline-slot" data-id="1"></div>
+    <div class="timeline-slot" data-id="2"></div>
+    <div class="timeline-slot" data-id="3"></div>
+  </div>
+  <div id="blocks-container">
+    <div class="draggable-block" id="block1" data-id="1" draggable="true">1456</div>
+    <div class="draggable-block" id="block2" data-id="2" draggable="true">1723</div>
+    <div class="draggable-block" id="block3" data-id="3" draggable="true">1991</div>
+  </div>
+
+  <script>
+    const successSynth = new Tone.Synth().toDestination();
+    const errorSynth = new Tone.Synth().toDestination();
+    const winSynth = new Tone.Synth().toDestination();
+
+    const blocks = document.querySelectorAll('.draggable-block');
+    const slots = document.querySelectorAll('.timeline-slot');
+
+    blocks.forEach(block => {
+      block.addEventListener('dragstart', e => {
+        if (Tone.context.state !== 'running') Tone.start();
+        e.dataTransfer.setData('text/plain', block.id);
+      });
+    });
+
+    slots.forEach(slot => {
+      slot.addEventListener('dragover', e => {
+        e.preventDefault();
+        slot.classList.add('drag-over');
+      });
+
+      slot.addEventListener('dragleave', () => {
+        slot.classList.remove('drag-over');
+      });
+
+      slot.addEventListener('drop', e => {
+        e.preventDefault();
+        slot.classList.remove('drag-over');
+        const draggedId = e.dataTransfer.getData('text/plain');
+        const draggedElement = document.getElementById(draggedId);
+        const slotId = slot.dataset.id;
+        const blockId = draggedElement.dataset.id;
+
+        if (slotId === blockId) {
+          slot.appendChild(draggedElement);
+          draggedElement.draggable = false;
+          successSynth.triggerAttackRelease("C5", "8n");
+          checkCompletion();
+        } else {
+          errorSynth.triggerAttackRelease("C3", "8n");
+          draggedElement.classList.add('shake');
+          setTimeout(() => draggedElement.classList.remove('shake'), 400);
+        }
+      });
+    });
+
+    function checkCompletion() {
+      const placed = document.querySelectorAll('.timeline-slot .draggable-block').length;
+      if (placed === blocks.length) {
+        winSynth.triggerAttackRelease("E5", "8n");
+        alert("Жарайсың! Барлық блоктар дұрыс орналастырылды.");
+      }
+    }
+  </script>
+</body>
+</html>
